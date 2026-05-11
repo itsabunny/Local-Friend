@@ -1,5 +1,5 @@
-PyQt6 = GUI
-Pillow = image processing
-mss = cross-platform screen capture
-ollama = language model
-pytest = testing framework
+PyQt6
+Pillow
+mss
+ollama
+pytest
