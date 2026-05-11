@@ -1,6 +1,7 @@
 from PyQt6.QtCore import Qt, QRect
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget, QApplication
+from local_friend.workers.assistant_worker import AssistantWorker
 
 from local_friend.config import (
     DEFAULT_AVATAR_TEXT,
@@ -17,6 +18,9 @@ class PetOverlay(QWidget):
         self._drag_pos = None
         self._build_ui()
         self._position_bottom_right()
+        self.worker = AssistantWorker()
+        self.worker.status_update.connect(self.update_status)
+        self.worker.start()
 
     def _build_ui(self) -> None:
         self.setWindowFlags(
