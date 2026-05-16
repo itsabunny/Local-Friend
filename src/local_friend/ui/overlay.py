@@ -20,6 +20,7 @@ class PetOverlay(QWidget):
         self._position_bottom_right()
         self.worker = AssistantWorker()
         self.worker.status_update.connect(self.update_status)
+        self.worker.new_commentary.connect(self.update_speech)
         self.worker.start()
 
     def _build_ui(self) -> None:
