@@ -6,11 +6,19 @@ from local_friend.config import (
     COUNTDOWN_UPDATE_MS,
 )
 from local_friend.capture.screen_capture import capture_primary_screen
-from local_friend.services.commentary_service import prepare_image_for_model
+from local_friend.services.commentary_service import (
+    prepare_image_for_model,
+    CommentaryService,
+)
 
 
 class AssistantWorker(QThread):
     status_update = pyqtSignal(str)
+    new_commentary = pyqtSignal(str)  # NY SIGNAL
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.commentary_service = CommentaryService()  # NY
 
     def run(self) -> None:
         last_run_time = time.time() - CAPTURE_INTERVAL_SECONDS
@@ -19,14 +27,18 @@ class AssistantWorker(QThread):
             current_time = time.time()
 
             if current_time - last_run_time >= CAPTURE_INTERVAL_SECONDS:
-                self.status_update.emit("Capturing screen...")
+                self.status_update.emit("🤔 Thinking...")
 
                 image = capture_primary_screen()
                 image = prepare_image_for_model(image)
 
-                self.status_update.emit(
-                    f"Captured {image.width}x{image.height} image in RAM"
-                )
+                commentary = self.commentary_service.get_new_commentary(image)  # NY
+
+                if commentary:
+                    self.new_commentary.emit(commentary)  # NY
+                    self.status_update.emit("✨ Done!")
+                else:
+                    self.status_update.emit("💤 Nothing new...")
 
                 last_run_time = time.time()
             else:
