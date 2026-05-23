@@ -14,11 +14,11 @@ from local_friend.services.commentary_service import (
 
 class AssistantWorker(QThread):
     status_update = pyqtSignal(str)
-    new_commentary = pyqtSignal(str)  # NY SIGNAL
+    new_commentary = pyqtSignal(str)
 
     def __init__(self) -> None:
         super().__init__()
-        self.commentary_service = CommentaryService()  # NY
+        self.commentary_service = CommentaryService()
 
     def run(self) -> None:
         last_run_time = time.time() - CAPTURE_INTERVAL_SECONDS
@@ -32,10 +32,13 @@ class AssistantWorker(QThread):
                 image = capture_primary_screen()
                 image = prepare_image_for_model(image)
 
-                commentary = self.commentary_service.get_new_commentary(image)  # NY
+                commentary = self.commentary_service.get_new_commentary(image)
+
+                # TILLFÄLLIG DEBUG - ta bort senare
+                print(f"[DEBUG] commentary = {repr(commentary)}")
 
                 if commentary:
-                    self.new_commentary.emit(commentary)  # NY
+                    self.new_commentary.emit(commentary)
                     self.status_update.emit("✨ Done!")
                 else:
                     self.status_update.emit("💤 Nothing new...")
