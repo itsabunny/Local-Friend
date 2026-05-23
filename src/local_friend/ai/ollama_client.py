@@ -10,6 +10,7 @@ class OllamaClient:
         try:
             response = self.client.chat(
                 model=OLLAMA_MODEL,
+                think=False,
                 messages=[
                     {'role': 'system', 'content': system_prompt},
                     {'role': 'user', 'content': user_query, 'images': [image_data]}
