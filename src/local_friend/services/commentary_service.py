@@ -35,6 +35,11 @@ class CommentaryService:
             image_b64, persona, DEFAULT_QUERY
         ).strip()
 
+        # TILLFÄLLIG DEBUG - ta bort senare
+        print(f"[DEBUG] image_b64_len     = {len(image_b64)}")
+        print(f"[DEBUG] raw from ollama   = {repr(commentary)}")
+        print(f"[DEBUG] last_commentary  = {repr(self.last_commentary)}")
+
         if not commentary or commentary == self.last_commentary:
             return None
 
