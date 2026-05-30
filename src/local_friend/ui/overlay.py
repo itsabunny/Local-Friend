@@ -1,9 +1,10 @@
-from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtCore import Qt, QRect, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget, QApplication
 from local_friend.workers.assistant_worker import AssistantWorker
 
 from local_friend.config import (
+    CAPTURE_HIDE_DELAY_MS,
     DEFAULT_AVATAR_TEXT,
     DEFAULT_BUBBLE_TEXT,
     DEFAULT_STATUS_TEXT,
@@ -13,6 +14,8 @@ from local_friend.config import (
 
 
 class PetOverlay(QWidget):
+    overlay_hidden = pyqtSignal()  # bekräftar till worker att vi är gömda
+
     def __init__(self) -> None:
         super().__init__()
         self._drag_pos = None
@@ -21,7 +24,15 @@ class PetOverlay(QWidget):
         self.worker = AssistantWorker()
         self.worker.status_update.connect(self.update_status)
         self.worker.new_commentary.connect(self.update_speech)
+        self.worker.request_hide.connect(self.hide_for_capture)
+        self.worker.request_show.connect(self.show)
+        self.overlay_hidden.connect(self.worker.on_overlay_hidden)
         self.worker.start()
+
+    def hide_for_capture(self) -> None:
+        """Göm overlay och bekräfta till worker efter en kort fördröjning."""
+        self.hide()
+        QTimer.singleShot(CAPTURE_HIDE_DELAY_MS, self.overlay_hidden.emit)
 
     def _build_ui(self) -> None:
         self.setWindowFlags(
