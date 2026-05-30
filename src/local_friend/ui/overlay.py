@@ -21,14 +21,7 @@ class PetOverlay(QWidget):
         self._drag_pos = None
         self._build_ui()
         self._position_bottom_right()
-        self.worker = AssistantWorker()
-        self.worker.status_update.connect(self.update_status)
-        self.worker.new_commentary.connect(self.update_speech)
-        self.worker.request_hide.connect(self.hide_for_capture)
-        self.worker.request_show.connect(self.show)
-        self.overlay_hidden.connect(self.worker.on_overlay_hidden)
-        self.worker.start()
-
+        
     def hide_for_capture(self) -> None:
         """Göm overlay och bekräfta till worker efter en kort fördröjning."""
         self.hide()

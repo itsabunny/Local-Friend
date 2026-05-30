@@ -1,12 +1,12 @@
 import sys
 from PyQt6.QtWidgets import QApplication
-from local_friend.ui.overlay import PetOverlay
+from local_friend.app.controller import AppController
 
 
 def main() -> int:
     app = QApplication(sys.argv)
-    overlay = PetOverlay()
-    overlay.show()
+    controller = AppController()
+    controller.start()
     return app.exec()
 
 
