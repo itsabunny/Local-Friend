@@ -1,9 +1,7 @@
 from PyQt6.QtCore import Qt, QRect, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont
-from local_friend.ui.widgets import SpeechBubble, StatusLabel, AvatarWidget
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget, QApplication
-from local_friend.workers.assistant_worker import AssistantWorker
+from PyQt6.QtWidgets import QVBoxLayout, QWidget, QApplication
 
+from local_friend.ui.widgets import SpeechBubble, StatusLabel, AvatarWidget
 from local_friend.config import (
     CAPTURE_HIDE_DELAY_MS,
     DEFAULT_AVATAR_TEXT,
@@ -15,16 +13,15 @@ from local_friend.config import (
 
 
 class PetOverlay(QWidget):
-    overlay_hidden = pyqtSignal()  # bekräftar till worker att vi är gömda
+    overlay_hidden = pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
         self._drag_pos = None
         self._build_ui()
         self._position_bottom_right()
-        
+
     def hide_for_capture(self) -> None:
-        """Göm overlay och bekräfta till worker efter en kort fördröjning."""
         self.hide()
         QTimer.singleShot(CAPTURE_HIDE_DELAY_MS, self.overlay_hidden.emit)
 
@@ -42,28 +39,8 @@ class PetOverlay(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         self.status_label = StatusLabel(DEFAULT_STATUS_TEXT)
-        self.status_label.setStyleSheet(
-            "color: #aaa; font-size: 10px; background: transparent;"
-        )
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
         self.bubble = SpeechBubble(DEFAULT_BUBBLE_TEXT)
-        self.bubble.setWordWrap(True)
-        self.bubble.setMinimumWidth(180)
-        self.bubble.setMaximumWidth(280)
-        self.bubble.setStyleSheet("""
-            background-color: rgba(30, 30, 30, 220);
-            border: 1px solid #888;
-            border-radius: 12px;
-            padding: 10px 14px;
-            color: white;
-            font-size: 13px;
-        """)
-
         self.avatar = AvatarWidget(DEFAULT_AVATAR_TEXT)
-        self.avatar.setFont(QFont("Noto Color Emoji", 36))
-        self.avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.avatar.setStyleSheet("background: transparent;")
 
         layout.addWidget(self.status_label)
         layout.addWidget(self.bubble)

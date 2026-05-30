@@ -35,8 +35,9 @@ class SpeechBubble(QLabel):
 
 
 class AvatarWidget(QLabel):
-    def __init__(self, avatar: str = "🦆"):
+    def __init__(self, avatar: str = "😊"):
         super().__init__(avatar)
+        self._base_avatar = avatar
         self.avatar_type = "duck"
         self.state = "idle"
         self.setFont(QFont("Noto Color Emoji", 36))
@@ -44,6 +45,7 @@ class AvatarWidget(QLabel):
         self.setStyleSheet("background: transparent;")
 
     def set_avatar(self, avatar: str) -> None:
+        self._base_avatar = avatar
         self.setText(avatar)
 
     def set_state(self, state: str) -> None:
@@ -53,6 +55,6 @@ class AvatarWidget(QLabel):
         elif state == "capturing":
             self.setText("📸")
         elif state == "talking":
-            self.setText("🗣️")
+            self.setText("😀")
         else:
-            self.setText("🦆")
+            self.setText(self._base_avatar)
