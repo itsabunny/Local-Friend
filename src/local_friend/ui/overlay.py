@@ -1,5 +1,6 @@
 from PyQt6.QtCore import Qt, QRect, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
+from local_friend.ui.widgets import SpeechBubble, StatusLabel, AvatarWidget
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget, QApplication
 from local_friend.workers.assistant_worker import AssistantWorker
 
@@ -40,13 +41,13 @@ class PetOverlay(QWidget):
         layout.setSpacing(6)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        self.status_label = QLabel(DEFAULT_STATUS_TEXT)
+        self.status_label = StatusLabel(DEFAULT_STATUS_TEXT)
         self.status_label.setStyleSheet(
             "color: #aaa; font-size: 10px; background: transparent;"
         )
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.bubble = QLabel(DEFAULT_BUBBLE_TEXT)
+        self.bubble = SpeechBubble(DEFAULT_BUBBLE_TEXT)
         self.bubble.setWordWrap(True)
         self.bubble.setMinimumWidth(180)
         self.bubble.setMaximumWidth(280)
@@ -59,7 +60,7 @@ class PetOverlay(QWidget):
             font-size: 13px;
         """)
 
-        self.avatar = QLabel(DEFAULT_AVATAR_TEXT)
+        self.avatar = AvatarWidget(DEFAULT_AVATAR_TEXT)
         self.avatar.setFont(QFont("Noto Color Emoji", 36))
         self.avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.avatar.setStyleSheet("background: transparent;")
@@ -84,10 +85,19 @@ class PetOverlay(QWidget):
         )
 
     def update_status(self, text: str) -> None:
-        self.status_label.setText(text)
+        self.status_label.set_status(text)
+
+        if "Capturing" in text:
+            self.avatar.set_state("capturing")
+        elif "Thinking" in text:
+            self.avatar.set_state("thinking")
+        elif "Done" in text:
+            self.avatar.set_state("talking")
+        else:
+            self.avatar.set_state("idle")
 
     def update_speech(self, text: str) -> None:
-        self.bubble.setText(text)
+        self.bubble.set_text(text)
         self.adjustSize()
         self._position_bottom_right()
 
