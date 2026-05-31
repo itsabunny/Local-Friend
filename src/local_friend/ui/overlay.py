@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt, QRect, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QVBoxLayout, QWidget, QApplication
+from PyQt6.QtWidgets import QVBoxLayout, QWidget, QApplication, QMenu
 
-from local_friend.ui.widgets import SpeechBubble, StatusLabel, AvatarWidget
+from local_friend.ui.widgets import SpeechBubble, StatusLabel, AvatarWidget, AVATARS
 from local_friend.config import (
     CAPTURE_HIDE_DELAY_MS,
     DEFAULT_AVATAR_TEXT,
@@ -77,6 +77,54 @@ class PetOverlay(QWidget):
         self.bubble.set_text(text)
         self.adjustSize()
         self._position_bottom_right()
+
+    def contextMenuEvent(self, event) -> None:
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #1e1e1e;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 6px;
+                padding: 4px;
+            }
+            QMenu::item {
+                padding: 6px 20px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #3a3a3a;
+            }
+            QMenu::separator {
+                height: 1px;
+                background: #555;
+                margin: 4px 8px;
+            }
+        """)
+
+        avatar_menu = QMenu("🐾 Välj avatar", self)
+        avatar_menu.setStyleSheet(menu.styleSheet())
+
+        for name, states in AVATARS.items():
+            action = avatar_menu.addAction(f"{states['idle']} {name}")
+            action.setData(name)
+
+        menu.addMenu(avatar_menu)
+        menu.addSeparator()
+        quit_action = menu.addAction("❌ Avsluta")
+
+        action = menu.exec(event.globalPos())
+
+        if action is None:
+            return
+
+        if action == quit_action:
+            QApplication.quit()
+            return
+
+        avatar_name = action.data()
+        if avatar_name:
+            self.avatar.set_avatar(avatar_name)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:

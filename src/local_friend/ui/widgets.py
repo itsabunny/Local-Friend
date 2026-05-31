@@ -3,6 +3,39 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 
 
+AVATARS = {
+    "Smiley": {
+        "idle":      "😊",
+        "thinking":  "🤔",
+        "capturing": "📸",
+        "talking":   "😀",
+    },
+    "Anka": {
+        "idle":      "🦆",
+        "thinking":  "🦆",
+        "capturing": "🦆",
+        "talking":   "🦆",
+    },
+    "Kanin": {
+        "idle":      "🐰",
+        "thinking":  "🐰",
+        "capturing": "🐰",
+        "talking":   "🐰",
+    },
+    "Apa": {
+        "idle":      "🐵",
+        "thinking":  "🙈",
+        "capturing": "🙉",
+        "talking":   "🙊",
+    },
+    "Uggla": {
+        "idle":      "🦉",
+        "thinking":  "🦉",
+        "capturing": "🦉",
+        "talking":   "🦉",
+    },
+}
+
 class StatusLabel(QLabel):
     def __init__(self, text: str):
         super().__init__(text)
@@ -35,26 +68,18 @@ class SpeechBubble(QLabel):
 
 
 class AvatarWidget(QLabel):
-    def __init__(self, avatar: str = "😊"):
-        super().__init__(avatar)
-        self._base_avatar = avatar
-        self.avatar_type = "duck"
+    def __init__(self, avatar_name: str = "Smiley"):
+        self._states = AVATARS[avatar_name]
+        super().__init__(self._states["idle"])
         self.state = "idle"
         self.setFont(QFont("Noto Color Emoji", 36))
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setStyleSheet("background: transparent;")
 
-    def set_avatar(self, avatar: str) -> None:
-        self._base_avatar = avatar
-        self.setText(avatar)
+    def set_avatar(self, avatar_name: str) -> None:
+        self._states = AVATARS[avatar_name]
+        self.set_state(self.state)  # uppdatera direkt med nuvarande state
 
     def set_state(self, state: str) -> None:
         self.state = state
-        if state == "thinking":
-            self.setText("🤔")
-        elif state == "capturing":
-            self.setText("📸")
-        elif state == "talking":
-            self.setText("😀")
-        else:
-            self.setText(self._base_avatar)
+        self.setText(self._states.get(state, self._states["idle"]))
