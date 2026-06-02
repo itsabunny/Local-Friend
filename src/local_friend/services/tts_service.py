@@ -1,14 +1,13 @@
+import queue
 import threading
-import pyttsx3
 
 
 class TTSService:
     def __init__(self) -> None:
         self._enabled = False
-        self._lock = threading.Lock()
-        self._engine = pyttsx3.init()
-        self._engine.setProperty("rate", 160)
-        self._engine.setProperty("volume", 1.0)
+        self._queue: queue.Queue = queue.Queue()
+        self._worker = threading.Thread(target=self._run, daemon=True)
+        self._worker.start()
 
     def set_enabled(self, enabled: bool) -> None:
         self._enabled = enabled
@@ -17,14 +16,26 @@ class TTSService:
         return self._enabled
 
     def speak(self, text: str) -> None:
-        """Läser upp text i en separat tråd så UI inte fryser."""
-        if not self._enabled:
+        if not self._enabled or not text:
             return
+        self._queue.put(text)
 
-        def _run():
-            with self._lock:
-                self._engine.say(text)
-                self._engine.runAndWait()
+    def _run(self) -> None:
+        while True:
+            text = self._queue.get()
+            try:
+                self._speak_fresh(text)
+            except Exception as e:
+                print(f"[TTS] Fel: {e}")
+            finally:
+                self._queue.task_done()
 
-        thread = threading.Thread(target=_run, daemon=True)
-        thread.start()
+    def _speak_fresh(self, text: str) -> None:
+        """Skapar en ny motor för varje meddelande – kringgår Windows-buggen."""
+        import pyttsx3
+        engine = pyttsx3.init()
+        engine.setProperty("rate", 160)
+        engine.setProperty("volume", 1.0)
+        engine.say(text)
+        engine.runAndWait()
+        engine.stop()
