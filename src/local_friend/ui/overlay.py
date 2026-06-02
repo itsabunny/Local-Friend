@@ -16,6 +16,8 @@ class PetOverlay(QWidget):
     overlay_hidden = pyqtSignal()
     avatar_changed = pyqtSignal(str)
     tts_toggled = pyqtSignal(bool)
+    interval_changed = pyqtSignal(int)
+    model_changed = pyqtSignal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -108,12 +110,29 @@ class PetOverlay(QWidget):
         # --- Avatar-undermeny ---
         avatar_menu = QMenu("🐾 Välj avatar", self)
         avatar_menu.setStyleSheet(menu.styleSheet())
-
         for name, states in AVATARS.items():
             action = avatar_menu.addAction(f"{states['idle']} {name}")
             action.setData(("avatar", name))
-
         menu.addMenu(avatar_menu)
+
+        menu.addSeparator()
+
+        # --- Intervall-undermeny ---
+        interval_menu = QMenu("⏱️ Intervall", self)
+        interval_menu.setStyleSheet(menu.styleSheet())
+        for sec in [5, 10, 15, 30, 60]:
+            action = interval_menu.addAction(f"{sec} sekunder")
+            action.setData(("interval", sec))
+        menu.addMenu(interval_menu)
+
+        # --- Modell-undermeny ---
+        model_menu = QMenu("🧠 AI-modell", self)
+        model_menu.setStyleSheet(menu.styleSheet())
+        for model in ["llama3.2-vision", "moondream", "minicpm-v"]:
+            action = model_menu.addAction(model)
+            action.setData(("model", model))
+        menu.addMenu(model_menu)
+
         menu.addSeparator()
 
         # --- TTS toggle ---
@@ -149,6 +168,12 @@ class PetOverlay(QWidget):
         elif kind == "avatar":
             self.avatar.set_avatar(value)
             self.avatar_changed.emit(value)
+
+        elif kind == "interval":
+            self.interval_changed.emit(value)
+
+        elif kind == "model":
+            self.model_changed.emit(value)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:

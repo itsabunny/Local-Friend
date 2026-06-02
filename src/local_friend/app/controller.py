@@ -30,8 +30,12 @@ class AppController(QObject):
             self.worker.commentary_service.set_avatar
         )
 
-        # TTS toggle från overlay
+        # TTS toggle
         self.overlay.tts_toggled.connect(self.tts.set_enabled)
+
+        # Intervall och modell
+        self.overlay.interval_changed.connect(self.worker.set_interval)
+        self.overlay.model_changed.connect(self.worker.set_model)
 
     def _on_new_commentary(self, text: str) -> None:
         self.tts.speak(text)

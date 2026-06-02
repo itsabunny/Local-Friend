@@ -24,18 +24,29 @@ class AssistantWorker(QThread):
         super().__init__()
         self.commentary_service = CommentaryService()
         self._hidden_event = threading.Event()  # synkronisering
+        self._interval_sec = CAPTURE_INTERVAL_SECONDS  # NY: dynamiskt intervall
 
     def on_overlay_hidden(self) -> None:
         """Anropas av overlay (via signal) när den faktiskt är gömd."""
         self._hidden_event.set()
 
+    def set_interval(self, seconds: int) -> None:
+        """Ändrar hur ofta skärmdumpar tas."""
+        self._interval_sec = seconds
+        self.status_update.emit(f"⏱️ Intervall: {seconds}s")
+
+    def set_model(self, model_name: str) -> None:
+        """Byter AI-modell som används för bildanalys."""
+        self.commentary_service.ai_client.model = model_name
+        self.status_update.emit(f"🧠 Modell: {model_name}")
+
     def run(self) -> None:
-        last_run_time = time.time() - CAPTURE_INTERVAL_SECONDS
+        last_run_time = time.time() - self._interval_sec
 
         while True:
             current_time = time.time()
 
-            if current_time - last_run_time >= CAPTURE_INTERVAL_SECONDS:
+            if current_time - last_run_time >= self._interval_sec:
                 self.status_update.emit("📸 Capturing...")
 
                 # 1. Be overlay gömma sig
@@ -64,7 +75,7 @@ class AssistantWorker(QThread):
 
                 last_run_time = time.time()
             else:
-                remaining = int(CAPTURE_INTERVAL_SECONDS - (current_time - last_run_time))
+                remaining = int(self._interval_sec - (current_time - last_run_time))
                 self.status_update.emit(f"Next capture in {remaining}s")
 
             self.msleep(COUNTDOWN_UPDATE_MS)
