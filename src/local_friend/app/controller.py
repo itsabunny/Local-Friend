@@ -37,6 +37,12 @@ class AppController(QObject):
         self.overlay.interval_changed.connect(self.worker.set_interval)
         self.overlay.model_changed.connect(self.worker.set_model)
 
+        # NY: Chat-läge toggle → pausa/återuppta worker
+        self.overlay.chat_mode_toggled.connect(self.worker.set_paused)
+
+        # NY: Fråga från användaren → worker hanterar den
+        self.overlay.question_asked.connect(self.worker.ask_question)
+
     def _on_new_commentary(self, text: str) -> None:
         self.tts.speak(text)
 
