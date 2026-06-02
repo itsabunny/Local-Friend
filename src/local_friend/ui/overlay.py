@@ -14,6 +14,7 @@ from local_friend.config import (
 
 class PetOverlay(QWidget):
     overlay_hidden = pyqtSignal()
+    avatar_changed = pyqtSignal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -125,6 +126,7 @@ class PetOverlay(QWidget):
         avatar_name = action.data()
         if avatar_name:
             self.avatar.set_avatar(avatar_name)
+            self.avatar_changed.emit(avatar_name)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:

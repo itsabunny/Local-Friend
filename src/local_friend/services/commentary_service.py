@@ -26,19 +26,18 @@ class CommentaryService:
     def __init__(self) -> None:
         self.ai_client = OllamaClient()
         self.last_commentary = ""
+        self.avatar_name = "Smiley"  # NY
+
+    def set_avatar(self, avatar_name: str) -> None:  # NY
+        self.avatar_name = avatar_name
 
     def get_new_commentary(self, pil_image: Image.Image) -> str | None:
-        persona = get_random_persona()
+        persona = get_random_persona(self.avatar_name)  # ← skicka avatar
         image_b64 = _pil_to_base64(pil_image)
 
         commentary = self.ai_client.get_vision_commentary(
             image_b64, persona, DEFAULT_QUERY
         ).strip()
-
-        # TILLFÄLLIG DEBUG - ta bort senare
-        print(f"[DEBUG] image_b64_len     = {len(image_b64)}")
-        print(f"[DEBUG] raw from ollama   = {repr(commentary)}")
-        print(f"[DEBUG] last_commentary  = {repr(self.last_commentary)}")
 
         if not commentary or commentary == self.last_commentary:
             return None
