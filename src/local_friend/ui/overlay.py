@@ -7,9 +7,11 @@ from PyQt6.QtWidgets import (
     QMenu,
     QLineEdit,
     QPushButton,
+    QTextBrowser,
+    QLayout,
 )
 
-from local_friend.ui.widgets import SpeechBubble, StatusLabel, AvatarWidget, AVATARS
+from local_friend.ui.widgets import StatusLabel, AvatarWidget, AVATARS
 from local_friend.ai.ollama_models import get_installed_ollama_models
 from local_friend.config import (
     CAPTURE_HIDE_DELAY_MS,
@@ -27,16 +29,16 @@ class PetOverlay(QWidget):
     tts_toggled = pyqtSignal(bool)
     interval_changed = pyqtSignal(int)
     model_changed = pyqtSignal(str)
-    question_asked = pyqtSignal(str)   # NY: användaren ställde en fråga
-    chat_mode_toggled = pyqtSignal(bool)  # NY: True = chat-läge, False = auto-läge
+    question_asked = pyqtSignal(str)
+    chat_mode_toggled = pyqtSignal(bool)
 
     def __init__(self) -> None:
         super().__init__()
         self._drag_pos = None
         self._tts_enabled = False
-        self._chat_mode = False        # NY: håller koll på aktivt läge
+        self._chat_mode = False
         self._build_ui()
-        self._position_bottom_right()
+        QTimer.singleShot(0, self._position_bottom_right)
 
     def hide_for_capture(self) -> None:
         self.hide()
@@ -54,12 +56,33 @@ class PetOverlay(QWidget):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
         self.status_label = StatusLabel(DEFAULT_STATUS_TEXT)
-        self.bubble = SpeechBubble(DEFAULT_BUBBLE_TEXT)
+
+        self.bubble = QTextBrowser()
+        self.bubble.setReadOnly(True)
+        self.bubble.setOpenExternalLinks(False)
+        self.bubble.setMinimumWidth(220)
+        self.bubble.setMaximumWidth(320)
+        self.bubble.setMinimumHeight(70)
+        self.bubble.setMaximumHeight(220)
+        self.bubble.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.bubble.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.bubble.setStyleSheet("""
+            QTextBrowser {
+                background-color: rgba(30, 30, 30, 220);
+                border: 1px solid #888;
+                border-radius: 12px;
+                padding: 10px 14px;
+                color: white;
+                font-size: 13px;
+            }
+        """)
+        self.bubble.setPlainText(DEFAULT_BUBBLE_TEXT)
+
         self.avatar = AvatarWidget(DEFAULT_AVATAR_TEXT)
 
-        # --- NY: Chat-inmatning ---
         self.chat_input = QLineEdit()
         self.chat_input.setPlaceholderText("Ställ en fråga...")
         self.chat_input.setStyleSheet("""
@@ -103,7 +126,7 @@ class PetOverlay(QWidget):
 
         self.chat_widget = QWidget()
         self.chat_widget.setLayout(chat_row)
-        self.chat_widget.hide()  # dold som standard
+        self.chat_widget.hide()
 
         layout.addWidget(self.status_label)
         layout.addWidget(self.bubble)
@@ -111,35 +134,66 @@ class PetOverlay(QWidget):
         layout.addWidget(self.chat_widget)
 
         self.setLayout(layout)
+        self._resize_bubble_to_content()
         self.adjustSize()
 
     def _on_question_submitted(self) -> None:
-        """Anropas när användaren trycker Enter eller ➤-knappen."""
         question = self.chat_input.text().strip()
         if not question:
             return
+
         self.chat_input.clear()
         self.question_asked.emit(question)
 
     def _set_chat_mode(self, enabled: bool) -> None:
-        """Visar eller döljer chat-inmatningen och uppdaterar läge."""
         self._chat_mode = enabled
         self.chat_widget.setVisible(enabled)
         self.adjustSize()
-        self._position_bottom_right()
+        QTimer.singleShot(0, self._position_bottom_right)
         self.chat_mode_toggled.emit(enabled)
 
-    def _position_bottom_right(self) -> None:
-        screen = QApplication.primaryScreen()
-        if screen is None:
-            geometry = QRect(0, 0, 1920, 1080)
-        else:
-            geometry = screen.availableGeometry()
+    def _resize_bubble_to_content(self) -> None:
+        doc = self.bubble.document()
 
-        self.move(
-            geometry.right() - self.width() - WINDOW_MARGIN_X,
-            geometry.bottom() - self.height() - WINDOW_MARGIN_Y,
-        )
+        viewport_width = self.bubble.viewport().width()
+        if viewport_width <= 0:
+            viewport_width = self.bubble.maximumWidth() - 28
+
+        doc.setTextWidth(viewport_width)
+        doc.adjustSize()
+
+        target_height = int(doc.size().height()) + 16
+        target_height = max(70, min(220, target_height))
+
+        self.bubble.setFixedHeight(target_height)
+
+    def _get_current_screen_geometry(self) -> QRect:
+        screen = QApplication.screenAt(self.frameGeometry().center())
+
+        if screen is None and self.windowHandle() is not None:
+            screen = self.windowHandle().screen()
+
+        if screen is None:
+            screen = QApplication.primaryScreen()
+
+        if screen is None:
+            return QRect(0, 0, 1920, 1080)
+
+        return screen.availableGeometry()
+
+    def _position_bottom_right(self) -> None:
+        self.adjustSize()
+        self.resize(self.sizeHint())
+
+        geometry = self._get_current_screen_geometry()
+
+        x = geometry.x() + geometry.width() - self.width() - WINDOW_MARGIN_X
+        y = geometry.y() + geometry.height() - self.height() - WINDOW_MARGIN_Y
+
+        x = max(geometry.x(), x)
+        y = max(geometry.y(), y)
+
+        self.move(x, y)
 
     def update_status(self, text: str) -> None:
         self.status_label.set_status(text)
@@ -154,9 +208,10 @@ class PetOverlay(QWidget):
             self.avatar.set_state("idle")
 
     def update_speech(self, text: str) -> None:
-        self.bubble.set_text(text)
+        self.bubble.setPlainText(text)
+        self._resize_bubble_to_content()
         self.adjustSize()
-        self._position_bottom_right()
+        QTimer.singleShot(0, self._position_bottom_right)
 
     def contextMenuEvent(self, event) -> None:
         menu = QMenu(self)
@@ -182,7 +237,6 @@ class PetOverlay(QWidget):
             }
         """)
 
-        # --- Avatar-undermeny ---
         avatar_menu = QMenu("🐾 Välj avatar", self)
         avatar_menu.setStyleSheet(menu.styleSheet())
         for name, states in AVATARS.items():
@@ -192,14 +246,12 @@ class PetOverlay(QWidget):
 
         menu.addSeparator()
 
-        # --- Läge-toggle ---
         mode_label = "▶️ Byt till auto-läge" if self._chat_mode else "💬 Byt till chat-läge"
         mode_action = menu.addAction(mode_label)
         mode_action.setData(("mode", None))
 
         menu.addSeparator()
 
-        # --- Intervall-undermeny (bara synlig i auto-läge) ---
         interval_menu = QMenu("⏱️ Intervall", self)
         interval_menu.setStyleSheet(menu.styleSheet())
         interval_menu.setEnabled(not self._chat_mode)
@@ -208,7 +260,6 @@ class PetOverlay(QWidget):
             action.setData(("interval", sec))
         menu.addMenu(interval_menu)
 
-        # --- Modell-undermeny ---
         model_menu = QMenu("🧠 AI-modell", self)
         model_menu.setStyleSheet(menu.styleSheet())
         available_models = get_installed_ollama_models()
@@ -219,18 +270,15 @@ class PetOverlay(QWidget):
 
         menu.addSeparator()
 
-        # --- TTS toggle ---
         tts_label = "🔇 Stäng av röst" if self._tts_enabled else "🔊 Slå på röst"
         tts_action = menu.addAction(tts_label)
         tts_action.setData(("tts", None))
 
         menu.addSeparator()
 
-        # --- Avsluta ---
         quit_action = menu.addAction("❌ Avsluta")
         quit_action.setData(("quit", None))
 
-        # --- Hantera val ---
         chosen = menu.exec(event.globalPos())
 
         if chosen is None:
