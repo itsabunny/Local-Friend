@@ -28,6 +28,15 @@ DEFAULT_QUERY = (
     "screen. 1 short sentence only."
 )
 
+QUESTION_QUERY = (
+    "The user is sharing their screen and asking you a question about it. "
+    "Answer the question directly, concisely and helpfully. "
+    "If it's about code, reference specific line numbers when they're visible "
+    "in the editor. If something is unclear or not visible, say so honestly. "
+    "Stay in character, but prioritize being genuinely useful.\n\n"
+    "User's question: {question}"
+)
+
 
 def get_random_persona(avatar_name: str = "Smiley") -> str:
     personas = PERSONAS.get(avatar_name, PERSONAS["Smiley"])
