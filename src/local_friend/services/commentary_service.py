@@ -3,7 +3,7 @@ import base64
 from PIL import Image
 
 from local_friend.ai.ollama_client import OllamaClient
-from local_friend.ai.prompts import get_random_persona, DEFAULT_QUERY
+from local_friend.ai.prompts import get_random_persona, DEFAULT_QUERY, QUESTION_QUERY
 from local_friend.config import MAX_IMAGE_WIDTH
 
 
@@ -26,13 +26,14 @@ class CommentaryService:
     def __init__(self) -> None:
         self.ai_client = OllamaClient()
         self.last_commentary = ""
-        self.avatar_name = "Smiley"  # NY
+        self.avatar_name = "Smiley"
 
-    def set_avatar(self, avatar_name: str) -> None:  # NY
+    def set_avatar(self, avatar_name: str) -> None:
         self.avatar_name = avatar_name
 
     def get_new_commentary(self, pil_image: Image.Image) -> str | None:
-        persona = get_random_persona(self.avatar_name)  # ← skicka avatar
+        """Används i auto-läget – spontan kommentar om skärmen."""
+        persona = get_random_persona(self.avatar_name)
         image_b64 = _pil_to_base64(pil_image)
 
         commentary = self.ai_client.get_vision_commentary(
@@ -44,3 +45,15 @@ class CommentaryService:
 
         self.last_commentary = commentary
         return commentary
+
+    def get_answer(self, pil_image: Image.Image, question: str) -> str:
+        """Används i chat-läget – svarar på användarens specifika fråga."""
+        persona = get_random_persona(self.avatar_name)
+        image_b64 = _pil_to_base64(pil_image)
+        query = QUESTION_QUERY.format(question=question)
+
+        answer = self.ai_client.get_vision_commentary(
+            image_b64, persona, query
+        ).strip()
+
+        return answer or "Hmm, jag kunde inte se något tydligt på skärmen just nu."
