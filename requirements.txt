@@ -3,3 +3,4 @@ Pillow
 mss
 ollama
 pytest
+pyttsx3
