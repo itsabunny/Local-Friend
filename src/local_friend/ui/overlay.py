@@ -15,10 +15,12 @@ from local_friend.config import (
 class PetOverlay(QWidget):
     overlay_hidden = pyqtSignal()
     avatar_changed = pyqtSignal(str)
+    tts_toggled = pyqtSignal(bool)
 
     def __init__(self) -> None:
         super().__init__()
         self._drag_pos = None
+        self._tts_enabled = False
         self._build_ui()
         self._position_bottom_right()
 
@@ -103,30 +105,50 @@ class PetOverlay(QWidget):
             }
         """)
 
+        # --- Avatar-undermeny ---
         avatar_menu = QMenu("🐾 Välj avatar", self)
         avatar_menu.setStyleSheet(menu.styleSheet())
 
         for name, states in AVATARS.items():
             action = avatar_menu.addAction(f"{states['idle']} {name}")
-            action.setData(name)
+            action.setData(("avatar", name))
 
         menu.addMenu(avatar_menu)
         menu.addSeparator()
+
+        # --- TTS toggle ---
+        tts_label = "🔇 Stäng av röst" if self._tts_enabled else "🔊 Slå på röst"
+        tts_action = menu.addAction(tts_label)
+        tts_action.setData(("tts", None))
+
+        menu.addSeparator()
+
+        # --- Avsluta ---
         quit_action = menu.addAction("❌ Avsluta")
+        quit_action.setData(("quit", None))
 
-        action = menu.exec(event.globalPos())
+        # --- Hantera val ---
+        chosen = menu.exec(event.globalPos())
 
-        if action is None:
+        if chosen is None:
             return
 
-        if action == quit_action:
+        data = chosen.data()
+        if data is None:
+            return
+
+        kind, value = data
+
+        if kind == "quit":
             QApplication.quit()
-            return
 
-        avatar_name = action.data()
-        if avatar_name:
-            self.avatar.set_avatar(avatar_name)
-            self.avatar_changed.emit(avatar_name)
+        elif kind == "tts":
+            self._tts_enabled = not self._tts_enabled
+            self.tts_toggled.emit(self._tts_enabled)
+
+        elif kind == "avatar":
+            self.avatar.set_avatar(value)
+            self.avatar_changed.emit(value)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
