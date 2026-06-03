@@ -10,25 +10,25 @@ AVATARS = {
         "capturing": "📸",
         "talking":   "😀",
     },
-    "Anka": {
+    "Duck": {
         "idle":      "🦆",
         "thinking":  "🦆",
         "capturing": "🦆",
         "talking":   "🦆",
     },
-    "Kanin": {
+    "Rabbit": {
         "idle":      "🐰",
         "thinking":  "🐰",
         "capturing": "🐰",
         "talking":   "🐰",
     },
-    "Apa": {
+    "Monkey": {
         "idle":      "🐵",
         "thinking":  "🙈",
         "capturing": "🙉",
         "talking":   "🙊",
     },
-    "Uggla": {
+    "Owl": {
         "idle":      "🦉",
         "thinking":  "🦉",
         "capturing": "🦉",
@@ -78,7 +78,7 @@ class AvatarWidget(QLabel):
 
     def set_avatar(self, avatar_name: str) -> None:
         self._states = AVATARS[avatar_name]
-        self.set_state(self.state)  # uppdatera direkt med nuvarande state
+        self.set_state(self.state)  # update immediately with current state
 
     def set_state(self, state: str) -> None:
         self.state = state

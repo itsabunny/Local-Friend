@@ -37,6 +37,7 @@ class PetOverlay(QWidget):
         self._drag_pos = None
         self._tts_enabled = False
         self._chat_mode = False
+        self._user_has_moved = False   # NEW: tracks whether the user has dragged the overlay
         self._build_ui()
         QTimer.singleShot(0, self._position_bottom_right)
 
@@ -60,15 +61,17 @@ class PetOverlay(QWidget):
 
         self.status_label = StatusLabel(DEFAULT_STATUS_TEXT)
 
+        # The bubble grows freely with the content – no max height, no scrollbar
         self.bubble = QTextBrowser()
         self.bubble.setReadOnly(True)
         self.bubble.setOpenExternalLinks(False)
         self.bubble.setMinimumWidth(220)
         self.bubble.setMaximumWidth(320)
-        self.bubble.setMinimumHeight(70)
-        self.bubble.setMaximumHeight(220)
-        self.bubble.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.bubble.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.bubble.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.bubble.setSizeAdjustPolicy(
+            QTextBrowser.SizeAdjustPolicy.AdjustToContents
+        )
         self.bubble.setStyleSheet("""
             QTextBrowser {
                 background-color: rgba(30, 30, 30, 220);
@@ -84,7 +87,7 @@ class PetOverlay(QWidget):
         self.avatar = AvatarWidget(DEFAULT_AVATAR_TEXT)
 
         self.chat_input = QLineEdit()
-        self.chat_input.setPlaceholderText("Ställ en fråga...")
+        self.chat_input.setPlaceholderText("Ask a question...")
         self.chat_input.setStyleSheet("""
             QLineEdit {
                 background-color: #2a2a2a;
@@ -141,18 +144,19 @@ class PetOverlay(QWidget):
         question = self.chat_input.text().strip()
         if not question:
             return
-
         self.chat_input.clear()
         self.question_asked.emit(question)
 
     def _set_chat_mode(self, enabled: bool) -> None:
         self._chat_mode = enabled
         self.chat_widget.setVisible(enabled)
+        self._resize_bubble_to_content()
         self.adjustSize()
-        QTimer.singleShot(0, self._position_bottom_right)
+        QTimer.singleShot(0, self._reanchor_if_needed)
         self.chat_mode_toggled.emit(enabled)
 
     def _resize_bubble_to_content(self) -> None:
+        """Lets the bubble grow freely with the content – no max height."""
         doc = self.bubble.document()
 
         viewport_width = self.bubble.viewport().width()
@@ -162,8 +166,8 @@ class PetOverlay(QWidget):
         doc.setTextWidth(viewport_width)
         doc.adjustSize()
 
-        target_height = int(doc.size().height()) + 16
-        target_height = max(70, min(220, target_height))
+        target_height = int(doc.size().height()) + 24
+        target_height = max(50, target_height)   # at least 50px, no max limit
 
         self.bubble.setFixedHeight(target_height)
 
@@ -182,8 +186,31 @@ class PetOverlay(QWidget):
         return screen.availableGeometry()
 
     def _position_bottom_right(self) -> None:
+        """Only used at startup – places the overlay in the bottom-right corner."""
         self.adjustSize()
         self.resize(self.sizeHint())
+
+        geometry = self._get_current_screen_geometry()
+
+        x = geometry.x() + geometry.width() - self.width() - WINDOW_MARGIN_X
+        y = geometry.y() + geometry.height() - self.height() - WINDOW_MARGIN_Y
+
+        x = max(geometry.x(), x)
+        y = max(geometry.y(), y)
+
+        self.move(x, y)
+
+    def _reanchor_if_needed(self) -> None:
+        """
+        Adjusts the overlay position when the size changes,
+        but only if the user has NOT dragged it manually.
+        If the user has dragged it: keep the position.
+        """
+        self.adjustSize()
+        self.resize(self.sizeHint())
+
+        if self._user_has_moved:
+            return
 
         geometry = self._get_current_screen_geometry()
 
@@ -211,7 +238,7 @@ class PetOverlay(QWidget):
         self.bubble.setPlainText(text)
         self._resize_bubble_to_content()
         self.adjustSize()
-        QTimer.singleShot(0, self._position_bottom_right)
+        QTimer.singleShot(0, self._reanchor_if_needed)
 
     def contextMenuEvent(self, event) -> None:
         menu = QMenu(self)
@@ -237,7 +264,7 @@ class PetOverlay(QWidget):
             }
         """)
 
-        avatar_menu = QMenu("🐾 Välj avatar", self)
+        avatar_menu = QMenu("🐾 Choose avatar", self)
         avatar_menu.setStyleSheet(menu.styleSheet())
         for name, states in AVATARS.items():
             action = avatar_menu.addAction(f"{states['idle']} {name}")
@@ -246,21 +273,21 @@ class PetOverlay(QWidget):
 
         menu.addSeparator()
 
-        mode_label = "▶️ Byt till auto-läge" if self._chat_mode else "💬 Byt till chat-läge"
+        mode_label = "▶️ Switch to auto-mode" if self._chat_mode else "💬 Switch to chat-mode"
         mode_action = menu.addAction(mode_label)
         mode_action.setData(("mode", None))
 
         menu.addSeparator()
 
-        interval_menu = QMenu("⏱️ Intervall", self)
+        interval_menu = QMenu("⏱️ Interval", self)
         interval_menu.setStyleSheet(menu.styleSheet())
         interval_menu.setEnabled(not self._chat_mode)
         for sec in [5, 10, 15, 30, 60]:
-            action = interval_menu.addAction(f"{sec} sekunder")
+            action = interval_menu.addAction(f"{sec} seconds")
             action.setData(("interval", sec))
         menu.addMenu(interval_menu)
 
-        model_menu = QMenu("🧠 AI-modell", self)
+        model_menu = QMenu("🧠 AI-model", self)
         model_menu.setStyleSheet(menu.styleSheet())
         available_models = get_installed_ollama_models()
         for model in available_models:
@@ -270,13 +297,13 @@ class PetOverlay(QWidget):
 
         menu.addSeparator()
 
-        tts_label = "🔇 Stäng av röst" if self._tts_enabled else "🔊 Slå på röst"
+        tts_label = "🔇 Turn off voice" if self._tts_enabled else "🔊 Turn on voice"
         tts_action = menu.addAction(tts_label)
         tts_action.setData(("tts", None))
 
         menu.addSeparator()
 
-        quit_action = menu.addAction("❌ Avsluta")
+        quit_action = menu.addAction("❌ Quit")
         quit_action.setData(("quit", None))
 
         chosen = menu.exec(event.globalPos())
@@ -321,4 +348,6 @@ class PetOverlay(QWidget):
             event.accept()
 
     def mouseReleaseEvent(self, event) -> None:
+        if self._drag_pos is not None:
+            self._user_has_moved = True   # NEW: the user has dragged the overlay
         self._drag_pos = None

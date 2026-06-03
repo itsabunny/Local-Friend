@@ -26,12 +26,12 @@ class TTSService:
             try:
                 self._speak_fresh(text)
             except Exception as e:
-                print(f"[TTS] Fel: {e}")
+                print(f"[TTS] Error: {e}")
             finally:
                 self._queue.task_done()
 
     def _speak_fresh(self, text: str) -> None:
-        """Skapar en ny motor för varje meddelande – kringgår Windows-buggen."""
+        """Creates a new engine for each message – works around the Windows bug."""
         import pyttsx3
         engine = pyttsx3.init()
         engine.setProperty("rate", 160)

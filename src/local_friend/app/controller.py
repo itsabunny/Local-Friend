@@ -20,12 +20,12 @@ class AppController(QObject):
         # Worker → TTS
         self.worker.new_commentary.connect(self._on_new_commentary)
 
-        # Hide/show för capture
+        # Hide/show for capture
         self.worker.request_hide.connect(self.overlay.hide_for_capture)
         self.worker.request_show.connect(self.overlay.show)
         self.overlay.overlay_hidden.connect(self.worker.on_overlay_hidden)
 
-        # Avatar → persona-koppling
+        # Avatar → persona connection
         self.overlay.avatar_changed.connect(
             self.worker.commentary_service.set_avatar
         )
@@ -33,14 +33,14 @@ class AppController(QObject):
         # TTS toggle
         self.overlay.tts_toggled.connect(self.tts.set_enabled)
 
-        # Intervall och modell
+        # Interval and model
         self.overlay.interval_changed.connect(self.worker.set_interval)
         self.overlay.model_changed.connect(self.worker.set_model)
 
-        # NY: Chat-läge toggle → pausa/återuppta worker
+        # NEW: Chat mode toggle → pause/resume worker
         self.overlay.chat_mode_toggled.connect(self.worker.set_paused)
 
-        # NY: Fråga från användaren → worker hanterar den
+        # NEW: Question from the user → worker handles it
         self.overlay.question_asked.connect(self.worker.ask_question)
 
     def _on_new_commentary(self, text: str) -> None:

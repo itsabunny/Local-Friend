@@ -16,7 +16,7 @@ def prepare_image_for_model(image: Image.Image) -> Image.Image:
 
 
 def _pil_to_base64(image: Image.Image) -> str:
-    """Konverterar PIL-bild till base64-sträng i RAM – ingen fil skrivs till disk."""
+    """Converts PIL image to base64 string in RAM – no file is written to disc."""
     buf = io.BytesIO()
     image.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode("ascii")
@@ -32,7 +32,7 @@ class CommentaryService:
         self.avatar_name = avatar_name
 
     def get_new_commentary(self, pil_image: Image.Image) -> str | None:
-        """Används i auto-läget – spontan kommentar om skärmen."""
+        """Used in auto mode – spontaneous comment about the screen."""
         persona = get_random_persona(self.avatar_name)
         image_b64 = _pil_to_base64(pil_image)
 
@@ -47,7 +47,7 @@ class CommentaryService:
         return commentary
 
     def get_answer(self, pil_image: Image.Image, question: str) -> str:
-        """Används i chat-läget – svarar på användarens specifika fråga."""
+        """Used in chat mode – answers the user's specific question."""
         persona = get_random_persona(self.avatar_name)
         image_b64 = _pil_to_base64(pil_image)
         query = QUESTION_QUERY.format(question=question)
@@ -56,4 +56,4 @@ class CommentaryService:
             image_b64, persona, query
         ).strip()
 
-        return answer or "Hmm, jag kunde inte se något tydligt på skärmen just nu."
+        return answer or "Hmm, I couldn't see anything clearly on the screen right now."

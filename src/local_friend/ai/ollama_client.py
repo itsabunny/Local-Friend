@@ -6,7 +6,7 @@ class OllamaClient:
         self.client = ollama.Client(timeout=OLLAMA_TIMEOUT_SECONDS)
 
     def get_vision_commentary(self, image_data: str, system_prompt: str, user_query: str) -> str:
-        """Skickar bilddata (base64) och prompt till Ollama och returnerar svar."""
+        """Sends image data (base64) and prompt to Ollama and returns the response."""
         try:
             response = self.client.chat(
                 model=OLLAMA_MODEL,

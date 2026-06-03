@@ -25,26 +25,26 @@ class AssistantWorker(QThread):
         self.commentary_service = CommentaryService()
         self._hidden_event = threading.Event()
         self._interval_sec = CAPTURE_INTERVAL_SECONDS
-        self._paused = False          # NY: är auto-läget pausat?
-        self._question_event = threading.Event()   # NY: signal om fråga väntar
-        self._pending_question: str | None = None  # NY: frågan som väntar
+        self._paused = False          # NEW: is auto mode paused?
+        self._question_event = threading.Event()   # NEW: signal that a question is waiting
+        self._pending_question: str | None = None  # NEW: the question that is waiting
 
     def on_overlay_hidden(self) -> None:
-        """Anropas av overlay (via signal) när den faktiskt är gömd."""
+        """Called by the overlay (via signal) when it is actually hidden."""
         self._hidden_event.set()
 
     def set_interval(self, seconds: int) -> None:
-        """Ändrar hur ofta skärmdumpar tas."""
+        """Changes how often screenshots are taken."""
         self._interval_sec = seconds
         self.status_update.emit(f"⏱️ Intervall: {seconds}s")
 
     def set_model(self, model_name: str) -> None:
-        """Byter AI-modell som används för bildanalys."""
+        """Switches the AI model used for image analysis."""
         self.commentary_service.ai_client.model = model_name
         self.status_update.emit(f"🧠 Modell: {model_name}")
 
     def set_paused(self, paused: bool) -> None:
-        """Pausar eller återupptar auto-läget."""
+        """Pauses or resumes auto mode."""
         self._paused = paused
         if paused:
             self.status_update.emit("⏸️ Auto-läge avstängt")
@@ -53,17 +53,17 @@ class AssistantWorker(QThread):
 
     def ask_question(self, question: str) -> None:
         """
-        Anropas från UI-tråden när användaren ställer en fråga.
-        Lagrar frågan och signalerar att worker-tråden ska hantera den.
+        Called from the UI thread when the user asks a question.
+        Stores the question and signals that the worker thread should handle it.
         """
         self._pending_question = question
         self._question_event.set()
 
     def _handle_question(self, question: str) -> None:
-        """Tar en skärmdump och svarar på användarens fråga."""
+        """Takes a screenshot and answers the user's question."""
         self.status_update.emit("🤔 Thinking...")
 
-        # Göm overlay, ta skärmdump, visa overlay igen
+        # Hide overlay, take screenshot, show overlay again
         self._hidden_event.clear()
         self.request_hide.emit()
         self._hidden_event.wait(timeout=1.0)
@@ -71,7 +71,7 @@ class AssistantWorker(QThread):
         image = capture_primary_screen()
         self.request_show.emit()
 
-        # Bearbeta och skicka till AI med frågan
+        # Process and send to AI with the question
         image = prepare_image_for_model(image)
         answer = self.commentary_service.get_answer(image, question)
 
@@ -82,18 +82,18 @@ class AssistantWorker(QThread):
         last_run_time = time.time() - self._interval_sec
 
         while True:
-            # Kolla om en fråga väntar – hanteras alltid, oavsett läge
+            # Check if a question is waiting – always handled, regardless of mode
             if self._question_event.is_set():
                 self._question_event.clear()
                 question = self._pending_question
                 self._pending_question = None
                 if question:
                     self._handle_question(question)
-                last_run_time = time.time()  # återställ timer efter fråga
+                last_run_time = time.time()  # reset timer after question
                 self.msleep(COUNTDOWN_UPDATE_MS)
                 continue
 
-            # Auto-läge
+            # Auto mode
             if self._paused:
                 self.status_update.emit("⏸️ Chat-läge aktivt")
                 self.msleep(COUNTDOWN_UPDATE_MS)

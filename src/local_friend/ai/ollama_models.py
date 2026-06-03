@@ -13,12 +13,12 @@ FALLBACK_MODELS = [
 
 def get_installed_ollama_models() -> list[str]:
     """
-    Hämtar installerade Ollama-modeller genom att köra 'ollama list'.
+    Retrieves installed Ollama models by running 'ollama list'.
 
-    Returnerar en fallback-lista om:
-    - ollama inte finns i PATH
-    - kommandot misslyckas
-    - ingen modell kunde tolkas ut
+    Returns a fallback list if:
+    - ollama is not in PATH
+    - the command fails
+    - no model could be parsed
     """
     try:
         result = subprocess.run(
@@ -40,7 +40,7 @@ def get_installed_ollama_models() -> list[str]:
 
     models: list[str] = []
 
-    # Första raden är header, t.ex.:
+    # First line is the header, e.g.:
     # NAME ID SIZE MODIFIED
     for line in lines[1:]:
         parts = line.split()
