@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-friend"
+version = "0.1.0"
+dependencies = ["PyQt6", "Pillow", "mss", "ollama", "pyttsx3"]
+
+[project.scripts]
+local-friend = "local_friend.main:main"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "black"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.black]
+line-length = 88
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["local_friend*"]
