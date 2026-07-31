@@ -40,7 +40,7 @@ class AssistantWorker(QThread):
 
     def set_model(self, model_name: str) -> None:
         """Switches the AI model used for image analysis."""
-        self.commentary_service.ai_client.model = model_name
+        self.commentary_service.ai_client.set_model(model_name)
         self.status_update.emit(f"🧠 Modell: {model_name}")
 
     def set_paused(self, paused: bool) -> None:

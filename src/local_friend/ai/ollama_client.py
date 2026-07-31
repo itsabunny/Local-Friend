@@ -2,14 +2,17 @@ import ollama
 from local_friend.config import OLLAMA_MODEL, OLLAMA_TIMEOUT_SECONDS, OLLAMA_KEEP_ALIVE
 
 class OllamaClient:
-    def __init__(self):
+    def __init__(self, model: str | None = None):
         self.client = ollama.Client(timeout=OLLAMA_TIMEOUT_SECONDS)
+        self.model = model or OLLAMA_MODEL
+
+    def set_model(self, model_name: str) -> None:
+        self.model = model_name
 
     def get_vision_commentary(self, image_data: str, system_prompt: str, user_query: str) -> str:
-        """Sends image data (base64) and prompt to Ollama and returns the response."""
         try:
             response = self.client.chat(
-                model=OLLAMA_MODEL,
+                model=self.model,  # ← använd instansvariabeln
                 think=False,
                 messages=[
                     {'role': 'system', 'content': system_prompt},
