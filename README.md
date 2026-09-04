@@ -182,7 +182,7 @@ The full thesis report (in Swedish) is available in the `docs/` folder and docum
 
 ## License
 
-This project is provided as-is for educational and demonstration purposes.
+This project is licensed under the [GNU General Public License v3.0](LICENSE.md) (GPLv3).
 
 ---
 
