@@ -107,7 +107,7 @@ pip install -r requirements.txt
 ollama serve
 
 # 5. Run the application
-PYTHONPATH=src python -m local_friend.main
+python main.py
 ```
 
 > **Note:** On Linux, an X11-based session is required. Wayland is not supported because its security model intentionally restricts external screen capture.
@@ -131,13 +131,12 @@ Once the application is running:
 
 ```
 Local-Friend/
-├── src/local_friend/
-│   ├── main.py                 # Application entry point
+├── local_friend/
 │   ├── config.py               # Central configuration
 │   ├── app/
 │   │   └── controller.py       # Mediator / signal wiring
 │   ├── ui/
-│   │   ├── overlay.py          # Main overlay window
+│   ├── overlay.py          # Main overlay window
 │   │   └── widgets.py          # Avatar, speech bubble, status label
 │   ├── workers/
 │   │   └── assistant_worker.py # Background capture & AI worker thread
@@ -148,10 +147,15 @@ Local-Friend/
 │   │   └── tts_service.py      # Offline text-to-speech
 │   └── ai/
 │       ├── ollama_client.py    # Local VLM communication
+│       ├── ollama_models.py    # Installed Ollama models detection
 │       └── prompts.py          # Persona system prompts
 ├── tests/                      # Unit tests
 ├── docs/                       # Thesis documentation and archived prototype
-└── README.md                   # This file
+├── main.py                     # Application entry point
+├── pyproject.toml              # Build & project metadata
+├── requirements.txt            # Python dependencies
+├── LICENSE.md                  # GNU General Public License v3.0
+└── README.md                   # Project documentation
 ```
 
 ---
